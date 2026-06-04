@@ -7,7 +7,7 @@ class ApiError extends Error {
 
         // Array to store detailed error information
         errors = [],
-        stack = ""
+        stack = "" 
     ) {
 
         // Calls parent Error class constructor
