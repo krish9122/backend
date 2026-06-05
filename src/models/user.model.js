@@ -13,7 +13,7 @@ const userSchema = new Schema({
         index: true
     },
 
-       email: {
+    email: {
         type: String,
         required: true,
         unique: true,
@@ -21,7 +21,7 @@ const userSchema = new Schema({
         trim: true,
     },
 
-       fullName: {
+    fullName: {
         type: String,
         required: true,
         Lowercase: true,
@@ -29,25 +29,25 @@ const userSchema = new Schema({
         index: true
     },
 
-       avatar: {
+    avatar: {
         type: String, //cloudnary url
         required: true,
     },
-       userName: {
+    userName: {
         type: String, //cloudnary url
-        required: true, 
+        required: true,
     },
 
     watchHistory: [
         {
             type: Schema.Types.ObjectId,
-            ref:"video"
+            ref: "video"
         }
     ],
 
     password: {
         type: String,
-        required: [true , 'password is required'],
+        required: [true, 'password is required'],
 
     }
 },
@@ -60,16 +60,16 @@ userSchema.pre("save", async function (next) {
     if (!this.isModified("password")) {
         return next()
     }
-    this.password = bcrypt.hash(this.password,10)
+    this.password = bcrypt.hash(this.password, 10)
     next()
 })
 
 userSchema.method.isPasswordCorrect = async function (password) {
-   return await bcrypt.compare(password,this.password)
+    return await bcrypt.compare(password, this.password)
 }
 
-userSchema.methods.generateAccessTokens = function() {
-   return jwt.sign(
+userSchema.methods.generateAccessTokens = function () {
+    return jwt.sign(
         {
             _id: this._id,
             email: this.gmail,
@@ -78,22 +78,23 @@ userSchema.methods.generateAccessTokens = function() {
         },
         process.env.ACCCESS_TOKEN_SECRET,
         {
-            expiresIn: process.env.ACCESS_TOKEN_EXPIRY 
-        } 
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+        }
     )
 }
 
-userSchema.methods.generateRefreshTokens = function() {
-      return  jwt.sign(
+userSchema.methods.generateRefreshTokens = function () {
+    return jwt.sign(
         {
             _id: this._id,
         },
         process.env.REFRESH_TOKEN_SECRET,
         {
-            expiresIn: process.env.REFRESH_TOKEN_EXPIRY 
-        } 
+            expiresIn: process.env.REFRESH_TOKEN_EXPIRY
+        }
     )
 }
 
 
 export const User = mongoose.model("User", userSchema)
+//as User is directly connected to db , it will help us to check various User quaried
