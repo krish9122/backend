@@ -53,6 +53,7 @@ const registerUser = asyncHandlers(async (req, res) => {
     if (!avatar) {
         throw new ApiError(400,"avatar is not uploaded")
     }
+    
     // 6. user entry in db
     const user = await User.create({
         fullName,
@@ -73,7 +74,7 @@ const registerUser = asyncHandlers(async (req, res) => {
 
     // 9. user respomse
     return res.status(201).json(
-        new ApiResponse(200,createdUser,"createdUser created successfully")
+        new ApiResponse(200,createdUser,"created User created successfully")
     )
 
     })
