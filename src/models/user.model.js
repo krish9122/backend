@@ -8,7 +8,7 @@ const userSchema = new Schema({
         type: String,
         required: true,
         unique: true,
-        Lowercase: true,
+        lowercase: true,
         trim: true,
         index: true
     },
@@ -17,14 +17,14 @@ const userSchema = new Schema({
         type: String,
         required: true,
         unique: true,
-        Lowercase: true,
+        lowercase: true,
         trim: true,
     },
 
     fullName: {
         type: String,
         required: true,
-        Lowercase: true,
+        lowercase: true,
         trim: true,
         index: true
     },
@@ -33,7 +33,8 @@ const userSchema = new Schema({
         type: String, //cloudnary url
         required: true,
     },
-    userName: {
+
+    coverImage: {
         type: String, //cloudnary url
         required: true,
     },
@@ -56,15 +57,14 @@ const userSchema = new Schema({
     }
 )
 
-userSchema.pre("save", async function (next) {
+userSchema.pre("save", async function () {
     if (!this.isModified("password")) {
-        return next()
+        return
     }
-    this.password = bcrypt.hash(this.password, 10)
-    next()
+    this.password = await bcrypt.hash(this.password, 10)
 })
 
-userSchema.method.isPasswordCorrect = async function (password) {
+userSchema.methods.isPasswordCorrect = async function (password) {
     return await bcrypt.compare(password, this.password)
 }
 
@@ -72,7 +72,7 @@ userSchema.methods.generateAccessTokens = function () {
     return jwt.sign(
         {
             _id: this._id,
-            email: this.gmail,
+            email: this.email,
             userName: this.userName,
             fullName: this.fullName
         },

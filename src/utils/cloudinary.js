@@ -10,17 +10,29 @@ cloudinary.config({
 const UploadOnClouddinary = async (LocalFilePath1) => {
     try {
         if (!LocalFilePath1) return null
-        const response = await cloudinary.v2.uploader
+        const response = await cloudinary.uploader
             .upload(LocalFilePath1, {
-                resource_type: "video",
+                resource_type: "auto",//this allows uploader to autamaticallt detect  the type of file and upload accordingly
                 overwrite: true
             })
+
+        // remove local temp file after successful upload (if exists)
+        try {
+            if (fs.existsSync(LocalFilePath1)) fs.unlinkSync(LocalFilePath1)
+        } catch (e) {
+            // ignore cleanup errors
+        }
 
         return response
     }
 
     catch (error) {
-        fs.unlinkSync(LocalFilePath1) //remove locally saved tempory file as upload operation failed
+        console.error("UploadOnClouddinary error:", error)
+        try {
+            if (LocalFilePath1 && fs.existsSync(LocalFilePath1)) fs.unlinkSync(LocalFilePath1)
+        } catch (e) {
+            // ignore cleanup errors
+        }
         return null;
     }
 }
