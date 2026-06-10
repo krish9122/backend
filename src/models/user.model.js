@@ -57,6 +57,7 @@ const userSchema = new Schema({
     }
 )
 
+//pre save hook for hashing password before saving in db
 userSchema.pre("save", async function () { 
     if (!this.isModified("password")) {
         return
