@@ -23,4 +23,4 @@ userRouter.route("/login").post(loginUser)
 // this route is used to log out the user by clearing the access token and refresh token from the cookies. 
 userRouter.route("/logout").post(verifyJWT, loggedOut)
 
-export { userRouter };
+export default userRouter;

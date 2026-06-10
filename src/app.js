@@ -33,7 +33,7 @@ app.use(cookieParser());
 // req.cookies.token
 
 //routs
-import { userRouter } from "./routes/user.routs.js";
+import  userRouter from "./routes/user.routs.js";
 
 app.use("/api/v1/users", userRouter)
 
