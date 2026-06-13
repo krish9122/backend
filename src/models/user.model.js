@@ -58,7 +58,7 @@ const userSchema = new Schema({
 )
 
 //pre save hook for hashing password before saving in db
-userSchema.pre("save", async function () { 
+userSchema.pre("save", async function () {
     if (!this.isModified("password")) {
         return
     }
@@ -78,7 +78,7 @@ userSchema.methods.generateAccessTokens = function () {
             userName: this.userName,
             fullName: this.fullName
         },
-        process.env.ACCCESS_TOKEN_SECRET,
+        process.env.ACCESS_TOKEN_SECRET,
         {
             expiresIn: process.env.ACCESS_TOKEN_EXPIRY
         }
