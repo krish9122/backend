@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { registerUser, loginUser, loggedOut } from "../controllers/user.controller.js";
+import { registerUser, loginUser, loggedOut, refreshTokens } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js"
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -22,5 +22,7 @@ userRouter.route("/login").post(loginUser)
 
 // this route is used to log out the user by clearing the access token and refresh token from the cookies. 
 userRouter.route("/logout").post(verifyJWT, loggedOut)
+
+userRouter.route("/refresh-token").post(refreshTokens)
 
 export default userRouter;
