@@ -175,7 +175,7 @@ const loggedOut = asyncHandlers(async (req, res) => {
         .json(new ApiResponse(200, {}, "user logged out successfully"))
 })
 
-
+// access tokens and refresh tokens 
 const refreshTokens = asyncHandlers(async (req, res) => {
 
     // 1. get refresh token from cookies or request body   
@@ -232,4 +232,106 @@ const refreshTokens = asyncHandlers(async (req, res) => {
     }
 })
 
-export { registerUser, loginUser, loggedOut, refreshTokens }
+//changing Password
+const changeUserPassword = asyncHandlers(async (req, res) => {
+
+    const { oldPassword, newPassword } = req.body;
+
+    const uder = await User.findById(req.user?._id)
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+
+    if (!isPasswordCorrect) {
+        throw new ApiError(400, "old password is not correct")
+    }
+
+    user.password = newPassword;
+    await user.save({ vaildateBeforeSave: false })
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, {}, "password changed successfully"))
+})
+
+//changing userName and Email
+const changeFullNameAndEmail = asyncHandlers(async (req, res) => {
+
+    const { fullName, email } = req.body;
+
+    if (fullName || email) {
+        throw new ApiError(400, "invalid credintials")
+    }
+
+    User.findByIdAndUpdate(req.user?._id,
+        {
+            $set: (fullName, email)
+        },
+
+        {
+            new: true
+        }
+    ).select("-password")
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, {}, "fullName and email changed successfully"))
+})
+
+//Updating userAvatar
+const UpdateUsrAvatar = asyncHandlers(async (req, res) => {
+    const avatarLocalPath = req.file?.path //here
+
+    if (!avatarLocalPath) {
+        throw new ApiError(400, "avatar file path not found")
+    }
+
+    const avatar = await UploadOnClouddinary(avatarlocalPath); // avatar is an object 
+    // we only need the url from avatar (avatar.url)
+
+    if (!avatar.url) {
+        throw new ApiError(400, "error while uploding avatar")
+    }
+
+    const user = User.findByIdAndUpdate(req.user?._id,
+        {
+            $set: (avatar.url)
+        },
+        {
+            new: true
+        }
+    ).select("-password")
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200,user,"avatar is Updated seccessfully"))
+
+})
+
+// updating coverImage
+const UpdateUserCoverImage = asyncHandlers(async (req, res) => {
+    const CoverImageLocalPath = req.file?.path //here
+
+    if (!CoverImageLocalPath) {
+        throw new ApiError(400, "avatar file path not found")
+    }
+
+    const coverImage = await UploadOnClouddinary(CoverImageLocalPath); // avatar is an object 
+    // we only need the url from avatar (avatar.url)
+
+    if (!CoverImage.url) {
+        throw new ApiError(400, "error while uploding coverImage")
+    }
+
+    const user = User.findByIdAndUpdate(req.user?._id,
+        {
+            $set: (CoverImage.url)
+        },
+        {
+            new: true
+        }
+    ).select("-password")
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200,user,"coverImage is Updated seccessfully"))
+})
+export { registerUser, loginUser, loggedOut, refreshTokens, changeUserPassword, changeFullNameAndEmail, UpdateUserCoverImage, UpdateUsrAvatar }
