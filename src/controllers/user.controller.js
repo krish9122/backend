@@ -44,7 +44,7 @@ const registerUser = asyncHandlers(async (req, res) => {
     // 3. checking already exist or not
     const existedUser = await User.findOne({
         $or: [{ userName }, { email }]
-    })
+    }).select("-password")
 
     if (existedUser) {
         throw new ApiError(409, "User already exist")
@@ -111,6 +111,10 @@ const loginUser = asyncHandlers(async (req, res) => {
         throw new ApiError(400, "email or username is required")
     }
 
+    if (!password) {
+        throw new ApiError("400", "password is required")
+    }
+
     // 3. check if user exist or not by email or username
     const user = await User.findOne({ //here user will hold _id, email, userName, password
         $or: [{ email }, { userName }]
@@ -127,7 +131,7 @@ const loginUser = asyncHandlers(async (req, res) => {
 
     // 5. if password is correct then generate access tokends and refresh tokens
     const { accessTokens, refreshTokens } = await generateAccessAndRefreshTokens(user._id)
-    const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken")//will be used
 
     // 6. send cookeis and response
     const options = {
@@ -181,7 +185,7 @@ const refreshTokens = asyncHandlers(async (req, res) => {
     // 1. get refresh token from cookies or request body   
     const incomingRefreshToken = req.cookies?.refreshTokens || req.body?.refreshTokens;
 
-    // 2. validate refresh token7
+    // 2. validate refresh token
     if (!incomingRefreshToken) { throw new ApiError(401, "Unauthorized: No refresh token provided") }
 
     try {
@@ -263,7 +267,7 @@ const changeFullNameAndEmail = asyncHandlers(async (req, res) => {
 
     User.findByIdAndUpdate(req.user?._id,
         {
-            $set: (fullName, email)
+            $set: { fullName: fullName, email: email }
         },
 
         {
@@ -291,7 +295,7 @@ const UpdateUsrAvatar = asyncHandlers(async (req, res) => {
         throw new ApiError(400, "error while uploding avatar")
     }
 
-    const user = User.findByIdAndUpdate(req.user?._id,
+    const user = await User.findByIdAndUpdate(req.user?._id,
         {
             $set: (avatar.url)
         },
@@ -301,8 +305,8 @@ const UpdateUsrAvatar = asyncHandlers(async (req, res) => {
     ).select("-password")
 
     return res
-    .status(200)
-    .json(new ApiResponse(200,user,"avatar is Updated seccessfully"))
+        .status(200)
+        .json(new ApiResponse(200, user, "avatar is Updated seccessfully"))
 
 })
 
@@ -321,7 +325,7 @@ const UpdateUserCoverImage = asyncHandlers(async (req, res) => {
         throw new ApiError(400, "error while uploding coverImage")
     }
 
-    const user = User.findByIdAndUpdate(req.user?._id,
+    const user = await User.findByIdAndUpdate(req.user?._id,
         {
             $set: (CoverImage.url)
         },
@@ -331,7 +335,77 @@ const UpdateUserCoverImage = asyncHandlers(async (req, res) => {
     ).select("-password")
 
     return res
-    .status(200)
-    .json(new ApiResponse(200,user,"coverImage is Updated seccessfully"))
+        .status(200)
+        .json(new ApiResponse(200, user, "coverImage is Updated seccessfully"))
 })
-export { registerUser, loginUser, loggedOut, refreshTokens, changeUserPassword, changeFullNameAndEmail, UpdateUserCoverImage, UpdateUsrAvatar }
+
+// get user channel profile
+const getUserChannelProfile = asyncHandlers(async (req, res) => {
+    const { username } = req.params
+    if (!username?.trim()) {
+        throw new ApiError(400, "username is required")
+    }
+
+    const channel = await User.aggregate([
+        {
+            // Match the user by username
+            $match: {
+                username: username?.toLowerCase()
+            }
+        },
+        {
+            // Lookup subscribers from the subscriptions collection
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "channel",
+                as: "subscribers"
+            }
+        },
+        {
+            // Lookup subscriptions from the subscriptions collection
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "subscriber",
+                as: "subscribedTo"
+            }
+        },
+        {
+            // Add fields to count the number of subscribers and subscriptions
+            $addFields: {
+                subscribersCount: { $size: "$subscribers" },
+                subscribedToCount: { $size: "$subscribedTo" },
+                isSubscribed: {
+                    $cond: { //here
+                        if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                fullName: 1,
+                avatar: 1,
+                coverImage: 1,
+                email: 1,
+                userName: 1,
+                subscribersCount: 1,
+                subscribedToCount: 1,
+                isSubscribed: 1
+            }
+        }
+    ])
+
+    if (!channel?.length) {
+        throw new ApiError(404, "channel not found")
+    }
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, channel[0], "Channel profile fetched successfully"))
+})
+
+export { registerUser, loginUser, loggedOut, refreshTokens, changeUserPassword, changeFullNameAndEmail, UpdateUserCoverImage, UpdateUsrAvatar, getUserChannelProfile }
